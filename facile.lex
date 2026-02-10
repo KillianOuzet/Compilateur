@@ -38,6 +38,9 @@
 #define TOK_LT 287            /* <  */
 #define TOK_EQ 288            /* =  */
 #define TOK_NE 289            /* #  */
+
+#define TOK_IDENTIFIER 290
+#define TOK_NUMBER 291
 %}
 
 %%
@@ -208,15 +211,18 @@ or {
     return TOK_NE;
 }
 
-    /* --- Test Regex Spécifique --- */
+[a-zA-Z][a-zA-Z0-9_]* {
+    assert(printf("identifier '%s(%d)' found", yytext, yyleng));
+    return TOK_IDENTIFIER;
+}
 
-[ab]*a[ab]*b[ab]*b[ab]*a {
-    assert(printf("'abba' found")); 
-    return yytext[0];
+0|[1-9][0-9]* {
+    assert(printf("number '%s' found", yytext));
+    return TOK_NUMBER;
 }
 
 %%
 /*
 * file: facile.lex
-* version: 0.3.0
+* version: 0.4.0
 */
