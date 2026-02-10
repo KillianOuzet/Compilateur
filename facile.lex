@@ -1,6 +1,8 @@
 %{
 #include <assert.h>
 
+#include "facile.y.h"
+
 // --- Mots clés ---
 #define TOK_IF 258
 #define TOK_THEN 259
@@ -217,7 +219,7 @@ or {
 }
 
 0|[1-9][0-9]* {
-    assert(printf("number '%s' found", yytext));
+    assert(printf("number '%s(%d)' found", yytext, yyleng));
     return TOK_NUMBER;
 }
 
@@ -230,5 +232,5 @@ or {
 %%
 /*
 * file: facile.lex
-* version: 0.5.0
+* version: 0.7.0
 */
