@@ -1,0 +1,35 @@
+# --- Dossier de compilation ---
+build/
+bin/
+lib/
+
+# --- Fichiers générés par CMake (au cas où tu lances cmake à la racine) ---
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+CPackConfig.cmake
+CPackSourceConfig.cmake
+
+# --- Fichiers objets et binaires ---
+*.o
+*.a
+*.so
+*.dylib
+
+# --- L'exécutable final (nom de ton projet) ---
+facile
+
+# --- Fichiers générés par Flex (s'ils ne sont pas dans build/) ---
+lex.yy.c
+*.lex.c
+
+# --- Système (macOS) ---
+.DS_Store
+.DS_Store?
+
+# --- IDE (VS Code, CLion, Xcode...) ---
+.vscode/
+.idea/
+*.xcodeproj/
+*.xcworkspace/
