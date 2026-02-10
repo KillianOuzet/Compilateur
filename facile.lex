@@ -1,5 +1,7 @@
 %{
 #include <assert.h>
+
+// --- Mots clés ---
 #define TOK_IF 258
 #define TOK_THEN 259
 #define TOK_ELSE 260
@@ -18,9 +20,29 @@
 #define TOK_NOT 273
 #define TOK_AND 274
 #define TOK_OR 275
+
+// --- Ponctuation & Opérateurs Arithmétiques ---
+#define TOK_SEMI_COLON 276
+#define TOK_AFFECTATION 277   /* Correspond à := */
+#define TOK_ADD 278
+#define TOK_SUB 279
+#define TOK_MUL 280
+#define TOK_DIV 281
+#define TOK_BRACKET_L 282
+#define TOK_BRACKET_R 283
+
+// --- Opérateurs de Comparaison (Nouveaux) ---
+#define TOK_GE 284            /* >= */
+#define TOK_LE 285            /* <= */
+#define TOK_GT 286            /* >  */
+#define TOK_LT 287            /* <  */
+#define TOK_EQ 288            /* =  */
+#define TOK_NE 289            /* #  */
 %}
 
 %%
+
+    /* --- Mots Clés --- */
 
 if {
     assert(printf("'if' found"));
@@ -112,6 +134,82 @@ or {
     return TOK_OR;
 }
 
+    /* --- Ponctuation & Arithmétique --- */
+
+";" {
+    assert(printf("';' found"));
+    return TOK_SEMI_COLON;
+}
+
+":=" {
+    assert(printf("':=' found"));
+    return TOK_AFFECTATION;
+}
+
+"+" {
+    assert(printf("'+' found"));
+    return TOK_ADD;
+}
+
+"-" {
+    assert(printf("'-' found"));
+    return TOK_SUB;
+}
+
+"*" {
+    assert(printf("'*' found"));
+    return TOK_MUL;
+}
+
+"/" {
+    assert(printf("'/' found"));
+    return TOK_DIV;
+}
+
+"(" {
+    assert(printf("'(' found"));
+    return TOK_BRACKET_L;
+}
+
+")" {
+    assert(printf("')' found"));
+    return TOK_BRACKET_R;
+}
+
+    /* --- Comparaisons --- */
+
+">=" {
+    assert(printf("'>=' found"));
+    return TOK_GE;
+}
+
+"<=" {
+    assert(printf("'<=' found"));
+    return TOK_LE;
+}
+
+">" {
+    assert(printf("'>' found"));
+    return TOK_GT;
+}
+
+"<" {
+    assert(printf("'<' found"));
+    return TOK_LT;
+}
+
+"=" {
+    assert(printf("'=' found"));
+    return TOK_EQ;
+}
+
+"#" {
+    assert(printf("'#' found"));
+    return TOK_NE;
+}
+
+    /* --- Test Regex Spécifique --- */
+
 [ab]*a[ab]*b[ab]*b[ab]*a {
     assert(printf("'abba' found")); 
     return yytext[0];
@@ -120,5 +218,5 @@ or {
 %%
 /*
 * file: facile.lex
-* version: 0.2.0
+* version: 0.3.0
 */
