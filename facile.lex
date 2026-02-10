@@ -221,8 +221,14 @@ or {
     return TOK_NUMBER;
 }
 
+[ \t\n] ;
+
+. {
+    return yytext[0];
+}
+
 %%
 /*
 * file: facile.lex
-* version: 0.4.0
+* version: 0.5.0
 */
