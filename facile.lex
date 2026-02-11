@@ -2,48 +2,9 @@
 #include <assert.h>
 
 #include "facile.y.h"
-
-// --- Mots clés ---
-#define TOK_IF 258
-#define TOK_THEN 259
-#define TOK_ELSE 260
-#define TOK_ELSEIF 261
-#define TOK_END 262
-#define TOK_ENDIF 263
-#define TOK_WHILE 264
-#define TOK_DO 265
-#define TOK_CONTINUE 266
-#define TOK_BREAK 267
-#define TOK_ENDWHILE 268
-#define TOK_READ 269
-#define TOK_PRINT 270
-#define TOK_TRUE 271
-#define TOK_FALSE 272
-#define TOK_NOT 273
-#define TOK_AND 274
-#define TOK_OR 275
-
-// --- Ponctuation & Opérateurs Arithmétiques ---
-#define TOK_SEMI_COLON 276
-#define TOK_AFFECTATION 277   /* Correspond à := */
-#define TOK_ADD 278
-#define TOK_SUB 279
-#define TOK_MUL 280
-#define TOK_DIV 281
-#define TOK_BRACKET_L 282
-#define TOK_BRACKET_R 283
-
-// --- Opérateurs de Comparaison (Nouveaux) ---
-#define TOK_GE 284            /* >= */
-#define TOK_LE 285            /* <= */
-#define TOK_GT 286            /* >  */
-#define TOK_LT 287            /* <  */
-#define TOK_EQ 288            /* =  */
-#define TOK_NE 289            /* #  */
-
-#define TOK_IDENTIFIER 290
-#define TOK_NUMBER 291
 %}
+
+%option yylineno
 
 %%
 
@@ -232,5 +193,5 @@ or {
 %%
 /*
 * file: facile.lex
-* version: 0.7.0
+* version: 0.8.0
 */

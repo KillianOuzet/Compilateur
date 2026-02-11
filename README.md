@@ -19,7 +19,7 @@ mkdir -p build
 cd build
 
 # Configuration avec le chemin vers Flex (Homebrew)
-cmake -DCMAKE_EXE_LINKER_FLAGS="-L$(brew --prefix flex)/lib" -DCMAKE_C_FLAGS="-I$(brew --prefix flex)/include" -DCMAKE_BUILD_TYPE=Debug ..
+cmake -DBISON_EXECUTABLE="$(brew --prefix bison)/bin/bison" -DCMAKE_EXE_LINKER_FLAGS="-L$(brew --prefix flex)/lib" -DCMAKE_C_FLAGS="-I$(brew --prefix flex)/include" -DCMAKE_BUILD_TYPE=Debug ..
 
 # Compilation
 make
