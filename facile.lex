@@ -1,5 +1,8 @@
 %{
+#include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
+#include <glib.h>
 
 #include "facile.y.h"
 %}
@@ -134,12 +137,12 @@ or {
 
 "(" {
     assert(printf("'(' found"));
-    return TOK_BRACKET_L;
+    return TOK_OPEN_PARENTHESIS;
 }
 
 ")" {
     assert(printf("')' found"));
-    return TOK_BRACKET_R;
+    return TOK_CLOSE_PARENTHESIS;
 }
 
     /* --- Comparaisons --- */
@@ -176,11 +179,13 @@ or {
 
 [a-zA-Z][a-zA-Z0-9_]* {
     assert(printf("identifier '%s(%d)' found", yytext, yyleng));
+    yylval.string = yytext;
     return TOK_IDENTIFIER;
 }
 
 0|[1-9][0-9]* {
     assert(printf("number '%s(%d)' found", yytext, yyleng));
+    sscanf(yytext, "%lu", &yylval.number);
     return TOK_NUMBER;
 }
 

@@ -17,6 +17,14 @@ FACILE_PARSER
 facile.y
 "${CMAKE_CURRENT_BINARY_DIR}/facile.y.c"
 )
+
+# Add glib
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GLIB2 REQUIRED glib-2.0)
+include_directories(${GLIB2_INCLUDE_DIRS})
+link_directories(${GLIB2_LIBRARY_DIRS})
+add_definitions(${GLIB2_CFLAGS_OTHER})
+
 # Creation of the "facile" executable
 add_executable(
 facile
@@ -25,6 +33,9 @@ ${BISON_FACILE_PARSER_OUTPUTS}
 )
 # Add flex library to the "facile" executable
 target_link_libraries(facile fl)
+# link glib
+target_link_libraries(facile ${GLIB2_LIBRARIES})
+
 # Add zip generator
 set(CPACK_SOURCE_GENERATOR "ZIP")
 set(CPACK_SOURCE_IGNORE_FILES "build;~$;${CPACK_SOURCE_IGNORE_FILES}")
