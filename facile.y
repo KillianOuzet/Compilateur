@@ -75,6 +75,11 @@ GNode * node;
 %type<node> read
 %type<node> affectation
 %type<node> number
+%type<node> if_stmt
+%type<node> boolean
+%type<node> else_branch
+%type<node> elseif_list
+%type<node> while_stmt
 
 %%
 
@@ -105,6 +110,16 @@ instruction:
     affectation
     | print
     | read
+    | if_stmt
+    | while_stmt
+    | TOK_BREAK
+    {
+        $$ = g_node_new("break");
+    }
+    | TOK_CONTINUE
+    {
+        $$ = g_node_new("continue");
+    }
     ;
 
 affectation:
@@ -130,6 +145,78 @@ read:
         $$ = g_node_new("read");
         g_node_append($$, $2);
     }
+    ;
+
+if_stmt:
+    TOK_IF boolean TOK_THEN code end_token
+    {
+        $$ = g_node_new("if");
+        g_node_append($$, $2);
+        g_node_append($$, $4);
+    }
+    | TOK_IF boolean TOK_THEN code else_branch end_token
+    {
+        $$ = g_node_new("if");
+        g_node_append($$, $2);
+        g_node_append($$, $4);
+        g_node_append($$, $5);
+    }
+    | TOK_IF boolean TOK_THEN code elseif_list end_token
+    {
+        $$ = g_node_new("if");
+        g_node_append($$, $2);
+        g_node_append($$, $4);
+        g_node_append($$, $5);
+    }
+    ;
+
+else_branch:
+    TOK_ELSE code
+    {
+        $$ = $2;
+    }
+    ;
+
+elseif_list:
+    TOK_ELSEIF boolean TOK_THEN code
+    {
+        $$ = g_node_new("if"); // Un elseif est juste un sous-if !
+        g_node_append($$, $2);
+        g_node_append($$, $4);
+    }
+    | TOK_ELSEIF boolean TOK_THEN code else_branch
+    {
+        $$ = g_node_new("if");
+        g_node_append($$, $2);
+        g_node_append($$, $4);
+        g_node_append($$, $5);
+    }
+    | TOK_ELSEIF boolean TOK_THEN code elseif_list
+    {
+        $$ = g_node_new("if");
+        g_node_append($$, $2);
+        g_node_append($$, $4);
+        g_node_append($$, $5);
+    }
+    ;
+
+end_token:
+    TOK_END
+    | TOK_ENDIF
+    ;
+
+while_stmt:
+    TOK_WHILE boolean TOK_DO code endwhile_token
+    {
+        $$ = g_node_new("while");
+        g_node_append($$, $2);
+        g_node_append($$, $4);
+    }
+    ;
+
+endwhile_token:
+    TOK_END
+    | TOK_ENDWHILE
     ;
 
 expression:
@@ -186,12 +273,53 @@ number:
     }
     ;
 
+boolean:
+    TOK_TRUE
+    { $$ = g_node_new("true"); }
+    | TOK_FALSE
+    { $$ = g_node_new("false"); }
+    | expression TOK_EQ expression
+    {
+        $$ = g_node_new("eq");
+        g_node_append($$, $1);
+        g_node_append($$, $3);
+    }
+    | expression TOK_GT expression
+    {
+        $$ = g_node_new("gt");
+        g_node_append($$, $1);
+        g_node_append($$, $3);
+    }
+    | expression TOK_LT expression
+    {
+        $$ = g_node_new("lt");
+        g_node_append($$, $1);
+        g_node_append($$, $3);
+    }
+    | expression TOK_GE expression
+    {
+        $$ = g_node_new("ge");
+        g_node_append($$, $1);
+        g_node_append($$, $3);
+    }
+    | expression TOK_LE expression
+    {
+        $$ = g_node_new("le");
+        g_node_append($$, $1);
+        g_node_append($$, $3);
+    }
+    ;
+
 %%
 
 /*
 * file: facile.y
 * version: 0.8.0
 */
+
+// Pile pour retenir l'ID de la boucle courante (pour break et continue) sinon on ne saura pas pour quelle boucle les appliquer
+int loop_stack[100];
+int loop_depth = 0;
 
 void begin_code(void) {
     fprintf(stream, ".assembly %s {}\n", module_name);
@@ -253,6 +381,90 @@ void produce_code(GNode* node) {
         fprintf(stream, " call string class [mscorlib]System.Console::ReadLine()\n");
         fprintf(stream, " call int32 int32::Parse(string)\n");
         fprintf(stream, " stloc\t%ld\n", (long)g_node_nth_child(g_node_nth_child(node, 0), 0)->data - 1);
+    } else if (strcmp((char*)node->data, "if") == 0) {
+        static int if_count = 0; 
+        int current_if = if_count++;
+        
+        produce_code(g_node_nth_child(node, 0));
+        fprintf(stream, " brfalse IF_FALSE_%d\n", current_if); // Si Faux, on saute à FALSE
+        
+        produce_code(g_node_nth_child(node, 1)); // Code si Vrai
+        
+        // S'il y a un ELSE ou un ELSEIF, on doit sauter par-dessus pour ne pas l'exécuter
+        if (g_node_n_children(node) == 3) {
+            fprintf(stream, " br IF_END_%d\n", current_if);
+        }
+        
+        fprintf(stream, "IF_FALSE_%d:\n", current_if); // else
+        
+        // S'il y a un ELSE ou un ELSEIF, on génère son code
+        if (g_node_n_children(node) == 3) {
+            produce_code(g_node_nth_child(node, 2));
+            fprintf(stream, "IF_END_%d:\n", current_if); // fin else
+        }
+    } else if (strcmp((char*)node->data, "while") == 0) {
+        static int while_count = 0; 
+        int current_while = while_count++;
+        
+        // On entre dans la boucle on empile son ID
+        loop_stack[loop_depth] = current_while;
+        loop_depth++;
+        
+        fprintf(stream, "WHILE_START_%d:\n", current_while);
+        // Évaluation de la condition
+        produce_code(g_node_nth_child(node, 0));
+        // Faux on skip
+        fprintf(stream, " brfalse WHILE_END_%d\n", current_while); 
+        
+        // Code boucle
+        produce_code(g_node_nth_child(node, 1)); 
+        
+        // bouclage
+        fprintf(stream, " br WHILE_START_%d\n", current_while);
+        fprintf(stream, "WHILE_END_%d:\n", current_while); 
+        
+        // On sort de la boucle on dépile son ID
+        loop_depth--;
+
+    } else if (strcmp((char*)node->data, "break") == 0) {
+        // On saute à la fin de la dernière boucle empilée
+        if (loop_depth > 0) {
+            fprintf(stream, " br WHILE_END_%d\n", loop_stack[loop_depth - 1]);
+        }
+    } else if (strcmp((char*)node->data, "continue") == 0) {
+        // On saute au début de la dernière boucle empilée
+        if (loop_depth > 0) {
+            fprintf(stream, " br WHILE_START_%d\n", loop_stack[loop_depth - 1]);
+        }
+    } else if (strcmp((char*)node->data, "true") == 0) {
+        fprintf(stream, " ldc.i4 1\n"); // 1 = Vrai
+    } else if (strcmp((char*)node->data, "false") == 0) {
+        fprintf(stream, " ldc.i4 0\n"); // 0 = Faux
+    } else if (strcmp((char*)node->data, "eq") == 0) {
+        produce_code(g_node_nth_child(node, 0));
+        produce_code(g_node_nth_child(node, 1));
+        fprintf(stream, " ceq\n"); // Compare si égal
+    } else if (strcmp((char*)node->data, "gt") == 0) {
+        produce_code(g_node_nth_child(node, 0));
+        produce_code(g_node_nth_child(node, 1));
+        fprintf(stream, " cgt\n"); // Compare si plus grand
+    } else if (strcmp((char*)node->data, "lt") == 0) {
+        produce_code(g_node_nth_child(node, 0));
+        produce_code(g_node_nth_child(node, 1));
+        fprintf(stream, " clt\n"); // Compare si plus petit
+    } else if (strcmp((char*)node->data, "ge") == 0) {
+        produce_code(g_node_nth_child(node, 0));
+        produce_code(g_node_nth_child(node, 1));
+        fprintf(stream, " clt\n");       // Vérifie si A < B
+        fprintf(stream, " ldc.i4 0\n");
+        fprintf(stream, " ceq\n");       // Compare si A < B est égal à Faux ?
+
+    } else if (strcmp((char*)node->data, "le") == 0) {
+        produce_code(g_node_nth_child(node, 0));
+        produce_code(g_node_nth_child(node, 1));
+        fprintf(stream, " cgt\n");
+        fprintf(stream, " ldc.i4 0\n");
+        fprintf(stream, " ceq\n");       // Compare A > B est égal à Faux ?
     }
 }
 
